@@ -11,7 +11,7 @@ function Particle:initialize(pos, mass, category)
     assert(category ~= nil, "category cannot be nil")
     PhyEntity.initialize(self, pos, mass)
 
-    self.temperature = 0
+    self.heat = 0
     self.life_count = 0
     self.generation = 1
     self.pulse = 0
@@ -48,12 +48,12 @@ function Particle:setCategory(c)
     self.category = c
 end
 
-function Particle:getTemperature()
-    return self.temperature
+function Particle:getHeat()
+    return self.heat
 end
 
-function Particle:setTemperature(temp)
-    self.temperature = temp
+function Particle:setHeat(heat)
+    self.heat = heat
 end
 
 function Particle:getLifeCount()

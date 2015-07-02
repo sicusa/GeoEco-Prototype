@@ -29,11 +29,13 @@ local Misc   = require "lib.misc"
 local PhyEntity = require "GeoEco.Physics.PhyEntity"
 local PhyInteractions = require "GeoEco.Physics.PhyInteractions"
 local PhyFluidResistance = require "GeoEco.Physics.PhyFluidResistance"
-local PhyInteractionApplier = require "GeoEco.Physics.PhyInteractionApplier"
+local PhyInteractionAppliers = require "GeoEco.Physics.PhyInteractionAppliers"
 local PhyRandomForceField = require "GeoEco.Physics.PhyRandomForceField"
 
 local Env = require "GeoEco.Environment"
 local Particle = require "GeoEco.Simulation.Particle"
+local PtlBehaviours = require "GeoEco.Simulation.PtlBehaviours"
+local PtlInteractions = require "GeoEco.Simulation.PtlInteractions"
 
 local PhyLevel = {}
 
@@ -151,16 +153,16 @@ function PhyLevel:enter()
 
     self.attracted = {}
 
-    for i = 1, 200 do
+    for i = 1, 500 do
         local x = lmath.random(0, w)
         local y = lmath.random(0, h)
         local mass = lmath.random(10, 10)
 
         local entity = Env:createParticle(
-            Vector:new(x, y), mass, "GEPT-ELEM-0003"
+            Vector:new(x, y), mass, "GEPT-ELEM-0000"
         )
         -- entity.ghost = true
-        entity:setTemperature(10)
+        entity:setHeat(10)
         table.insert(self.attracted, entityB)
     end
 
@@ -192,13 +194,17 @@ function PhyLevel:enter()
         Env:createConnection(e1, e2, PhyInteractions.fixedDistance(100))
     end
 
+    -- Env:addComponent(
+    --      PhyInteractionApplier:new(
+    --         PhyInteractions.gravity:new(100.8),
+    --         self.attractors
+    --     )
+    -- )
     Env:addComponent(
-         PhyInteractionApplier:new(
-            PhyInteractions.gravity:new(100.8),
-            self.attractors
+        PhyInteractionAppliers.global:new(
+            PtlInteractions.heat_conductive:new(1)
         )
     )
-    -- Env:addComponent(PhyInteractionApplier:new(PhyInteractions.gravity:new(6.6)))
     Env:addComponent(PhyRandomForceField:new(0.1, 1))
     Env:addComponent(PhyFluidResistance:new(1, 0.01))
 
@@ -238,10 +244,10 @@ function PhyLevel:mousepressed(x, y, button)
     mpos:mul(-500)
 
     local entity = Env:createParticle(
-        Vector:new(w/2, h/2), 10, "GEPT-ELEM-0003"
+        Vector:new(w/2, h/2), 10, "GEPT-ELEM-0000"
     )
     entity:applyForce(mpos)
-    entity:setTemperature(10)
+    entity:setHeat(10000)
     entity.ghost = true
 end
 
@@ -271,26 +277,26 @@ function PhyLevel:draw()
     drawNode(Env.quadtree.root)
 
     -- display ghost canvas
-    lgraph.setColor(255, 255, 255, 255)
-    lgraph.draw(self.canvas)
+    -- lgraph.setColor(255, 255, 255, 255)
+    -- lgraph.draw(self.canvas)
 
     -- render ghosts
-    lgraph.setBlendMode("alpha")
-    lgraph.setCanvas(self.canvas)
-    lgraph.setColor(255, 255, 255, 255)
-    lgraph.setShader(self.shader)
-
-    Env:foreachParticle(function(entity)
-        if entity.ghost then
-            local pos = entity.position
-            local lastpos = entity.lastpos
-            lgraph.line(lastpos.x, lastpos.y, pos.x, pos.y)
-        end
-    end)
-
-    lgraph.setBlendMode("subtractive")
-    lgraph.setColor(0, 0, 0, 50)
-    lgraph.rectangle("fill", 0, 0, w, h)
+    -- lgraph.setBlendMode("alpha")
+    -- lgraph.setCanvas(self.canvas)
+    -- lgraph.setColor(255, 255, 255, 255)
+    -- lgraph.setShader(self.shader)
+    --
+    -- for _, entity in pairs(Env:getEntities()) do
+    --     if entity.ghost then
+    --         local pos = entity.position
+    --         local lastpos = entity.lastpos
+    --         lgraph.line(lastpos.x, lastpos.y, pos.x, pos.y)
+    --     end
+    -- end
+    --
+    -- lgraph.setBlendMode("subtractive")
+    -- lgraph.setColor(0, 0, 0, 50)
+    -- lgraph.rectangle("fill", 0, 0, w, h)
 
     -- reset
     lgraph.setShader()
@@ -310,10 +316,11 @@ function PhyLevel:draw()
     lgraph.setColor(255, 255, 255, 255)
 
     -- render entities
-    Env:foreachParticle(function(entity)
+    for _, entity in pairs(Env:getEntities()) do
         local pos = entity.position
+        lgraph.setColor(255, 255, 255, math.min(255, entity:getHeat()))
         lgraph.point(pos.x, pos.y)
-    end)
+    end
 
     -- render circles for attractors
     for _, attractor in pairs(self.attractors) do
@@ -323,7 +330,7 @@ function PhyLevel:draw()
 
     -- show updating information of quadtree
     lgraph.setColor(255, 255, 255, 255)
-    lgraph.print(tostring(Env:getParticleCount()), 10, 10)
+    lgraph.print(tostring(Env:getParticleCount())..", "..ltimer.getFPS(), 10, 10)
 end
 
 return PhyLevel

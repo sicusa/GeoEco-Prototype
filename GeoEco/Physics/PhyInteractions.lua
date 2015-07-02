@@ -22,38 +22,6 @@ function PhySpringInteraction:initialize(info)
     self.max_len  = info.max_len or 100000000
 end
 
-function PhySpringInteraction:getElasticCoefficient()
-    return self.elastic
-end
-
-function PhySpringInteraction:setElasticCoefficient(elastic)
-    self.elastic = elastic
-end
-
-function PhySpringInteraction:getRestLength()
-    return self.rest_len
-end
-
-function PhySpringInteraction:setRestLength(rest_len)
-  self.rest_len = rest_len
-end
-
-function PhySpringInteraction:getMinimumLength()
-    return self.min_len
-end
-
-function PhySpringInteraction:setMinimumLength(min_len)
-    self.min_len = min_len
-end
-
-function PhySpringInteraction:getMaximumLength()
-    return self.max_len
-end
-
-function PhySpringInteraction:setMaximumLength(max_len)
-    self.max_len = max_len
-end
-
 function PhySpringInteraction:applyImpl(e1, e2, dir, len)
     local elastic = self.elastic
     local min_len, max_len = self.min_len, self.max_len

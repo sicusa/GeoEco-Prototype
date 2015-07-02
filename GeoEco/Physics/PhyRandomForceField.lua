@@ -1,6 +1,5 @@
 local class = require "lib.middleclass"
 local Vector = require "lib.vector"
-local setSelector = require "GeoEco.EntitySelectorSetter"
 
 local PhyRandomForceField = class("PhyRandomForceField")
 
@@ -14,7 +13,19 @@ function PhyRandomForceField:initialize(coefficient, scale, selector, frame)
     self.coefficient = coefficient or 1
     self.scale = scale or 1
     self.frame = frame or 0
-    setSelector(self, "selector", selector)
+    self:setSelector(selector)
+end
+
+function PhyRandomForceField:setSelector(selector)
+    if selector == nil then
+        self.selector = function(world) return world:getEntities() end
+    elseif type(selector) == "function" then
+        self.selector = selector
+    elseif type(selector) == "table" then
+        self.selector = function(...) return selector end
+    else
+        assert(false, "selector has invalid type")
+    end
 end
 
 function PhyRandomForceField:getCoefficient()
@@ -67,11 +78,11 @@ end
 function PhyRandomForceField:onUpdate(world)
     -- self.rotation = -noise(self.frame) * pi2
 
-    self.selector(function(entity)
+    for _, entity in pairs(self.selector(world)) do
         local pos = entity:getPosition()
         local force = self:getForce(pos.x, pos.y)
         entity:applyForce(force)
-    end)
+    end
 end
 
 return PhyRandomForceField

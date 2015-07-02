@@ -2,9 +2,9 @@ local class = require "lib.middleclass"
 
 local ParticleDecomposeBehaviour = class("ParticleDecomposeBehaviour")
 
-function ParticleDecomposeBehaviour:initialize(delay_factor, minTF, min_mass)
+function ParticleDecomposeBehaviour:initialize(delay_factor, min_HF, min_mass)
     self.delay_factor = delay_factor
-    self.min_TFactor = minTF
+    self.min_HFactor = min_HF
     self.min_mass = min_mass
 end
 
@@ -16,8 +16,8 @@ function ParticleDecomposeBehaviour:update(entity)
 
     local mass = entity:getMass()
 
-    local t = entity:getTemperature()
-    if t < self.min_TFactor / mass then
+    local t = entity:getHeat()
+    if t < self.min_HFactor / mass then
         return
     end
 
@@ -27,7 +27,7 @@ function ParticleDecomposeBehaviour:update(entity)
     end
 
     entity:setMass(mass / 2)
-    entity:setTemperature(t / 2)
+    entity:setHeat(t / 2)
     entity:setLifeCount(0)
     entity:setGeneration(generation - 1)
     entity:breakConnections()
@@ -42,9 +42,9 @@ end
 
 local ParticleDeconnectiveBehaviour = class("ParticleDeconnectiveBehaviour")
 
-function ParticleDeconnectiveBehaviour:initialize(delay_factor, minTF)
+function ParticleDeconnectiveBehaviour:initialize(delay_factor, min_HF)
     self.delay_factor = delay_factor
-    self.min_TFactor = minTF
+    self.min_HFactor = min_HF
 end
 
 function ParticleDeconnectiveBehaviour:update(entity)
@@ -55,7 +55,7 @@ function ParticleDeconnectiveBehaviour:update(entity)
     local mass = entity:getMass()
 
     local t = entity:getTemperature()
-    if t < self.min_TFactor / mass then
+    if t < self.min_HFactor / mass then
         return
     end
 

@@ -6,9 +6,9 @@ local PhyInteractions = require "GeoEco.Physics.PhyInteractions"
 local PtlCombinativeInteraction = class("PtlCombinativeInteraction")
 PtlCombinativeInteraction:include(PhyInteractions.base)
 
-function PtlCombinativeInteraction:initialize(max_mass, min_TF)
+function PtlCombinativeInteraction:initialize(max_mass, min_HF)
     self.max_mass = max_mass
-    self.min_TFactor = min_TF
+    self.min_HFactor = min_HF
 end
 
 function PtlCombinativeInteraction:applyImpl(e1, e2, dir, len)
@@ -22,24 +22,24 @@ function PtlCombinativeInteraction:applyImpl(e1, e2, dir, len)
         return
     end
 
-    local finalTemperature = e1:getTemperature() + e2:getTemperature()
-    if finalTemperature < self.min_TFactor * final_mass then
+    local final_heat = e1:getHeat() + e2:getHeat()
+    if final_heat < self.min_HFactor * final_mass then
         return
     end
 
     e1:setGeneration(e1:getGeneration() + 1)
     e1:setLifeCount(0)
     e1:setMass(final_mass)
-    e1:setTemperature(finalTemperature)
+    e1:setTemperature(final_heat)
     e2:removeSelf()
 end
 
 local PtlConnectiveInteraction = class("PtlConnectiveInteraction")
 PtlConnectiveInteraction:include(PhyInteractions.base)
 
-function PtlConnectiveInteraction:initialize(min_mass, min_TF, max_interaction_count)
+function PtlConnectiveInteraction:initialize(min_mass, min_HF, max_interaction_count)
     self.min_mass = min_mass
-    self.min_TFactor = min_TF
+    self.min_HFactor = min_HF
     self.max_interaction_count = max_interaction_count
 end
 
@@ -54,8 +54,8 @@ function PtlConnectiveInteraction:applyImpl(e1, e2, dir, len)
         return
     end
 
-    local total_temp = e1:getTemperature() + e2:getTemperature()
-    if total_temp < self.min_TFactor * final_mass then
+    local total_heat = e1:getHeat() + e2:getHeat()
+    if total_heat < self.min_HFactor * final_mass then
         return
     end
 
@@ -67,7 +67,48 @@ function PtlConnectiveInteraction:applyImpl(e1, e2, dir, len)
     Env:createConnection(e1, e2, PhyInteractions.fixedDistance:new(dist))
 end
 
+local PtlHeatConductiveBehaviour = class("PtlHeatConductiveBehaviour")
+PtlHeatConductiveBehaviour:include(PhyInteractions.base)
+
+function PtlHeatConductiveBehaviour:initialize(default_coefficient)
+    self.default_coefficient = default_coefficient
+end
+
+function PtlHeatConductiveBehaviour:applyImpl(e1, e2, dir, len)
+    local t1, t2 = e1:getHeat(), e2:getHeat()
+    local diff = t1 - t2
+
+    if diff == 0 then
+        return
+    end
+
+    local defco = self.default_coefficient
+    -- local co_e1 = e1:getCategory().thermal_conductivity or defco
+    -- local co_e2 = e2:getCategory().thermal_conductivity or defco
+
+    -- local t = math.min(co_e1, co_e2) * (diff / len / len)
+    local t = defco * (diff / len / len)
+    local mid = (t1 + t2) / 2
+
+    t1 = t1 - t
+    t2 = t2 + t
+
+    if diff > 0 then
+        if t1 < mid then
+            t1 = mid
+            t2 = mid
+        end
+    elseif t2 < mid then
+        t1 = mid
+        t2 = mid
+    end
+
+    e1:setHeat(t1)
+    e2:setHeat(t2)
+end
+
 return {
     combine = PtlCombinativeInteraction,
-    connect = PtlConnectiveInteraction
+    connect = PtlConnectiveInteraction,
+    heat_conductive = PtlHeatConductiveBehaviour
 }

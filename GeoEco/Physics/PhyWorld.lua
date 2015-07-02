@@ -10,6 +10,16 @@ local CComponentSupport = require "GeoEco.CComponentSupport"
 
 local insert, remove = table.insert, table.remove
 
+function findAndRemove(t, v)
+    for i, x in pairs(t) do
+        if x == v then
+            remove(t, i)
+            return true
+        end
+    end
+    return false
+end
+
 local PhyWorld = class("PhyWorld")
 PhyWorld:include(CComponentSupport)
 
@@ -20,7 +30,7 @@ function PhyWorld:initialize(width, height)
     self.frame_time = 0
     self.empty_nodes_clear_delay = 60
 
-    self.entity_count = 0
+    self.entities = {}
 
     self.connections = {}
     self.connection_count = 0
@@ -30,7 +40,7 @@ function PhyWorld:initialize(width, height)
 end
 
 function PhyWorld:getEntityCount()
-    return self.entity_count
+    return #self.entities
 end
 
 function PhyWorld:createEntity(pos, mass)
@@ -47,8 +57,12 @@ function PhyWorld:addEntity(entity)
     local pos = entity:getPosition()
     local rect = Rectangle:new(pos.x, pos.y, pos.x, pos.y)
     self.quadtree:insert(rect, entity)
-    self.entity_count = self.entity_count + 1
+    insert(self.entities, entity)
     return entity
+end
+
+function PhyWorld:getEntities()
+    return self.entities
 end
 
 function PhyWorld:addConnection(con)
@@ -63,6 +77,10 @@ function PhyWorld:removeConnection(con)
     con:getEntityA():removeConnection(con)
     con:getEntityB():removeConnection(con)
     self.removed_cons[con] = true
+end
+
+function PhyWorld:getConnections()
+    return self.connections
 end
 
 function PhyWorld:getFrameTime()
@@ -91,12 +109,6 @@ function PhyWorld:findAllInRadius(pos, radius, func)
             func(entity, dis)
         end
     end
-end
-
-function PhyWorld:foreachEntity(func)
-    self.quadtree:foreach(function(obj)
-        func(obj.data)
-    end)
 end
 
 function PhyWorld:getConnections()
@@ -158,7 +170,7 @@ function PhyWorld:update()
         local entity = obj.data
 
         if entity.selfRemoved == true then
-            self.entity_count = self.entity_count - 1
+            findAndRemove(self.entities, entity)
             return true
         end
 

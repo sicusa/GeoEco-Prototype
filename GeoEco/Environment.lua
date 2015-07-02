@@ -24,7 +24,9 @@ local sysparams = {
     PtlConnect_Range = 50,
 
     PtlDeconnect_DelayFactor = 2000,
-    PtlDeconnect_MinimumTemperatureFactor = 10
+    PtlDeconnect_MinimumTemperatureFactor = 10,
+
+    PtlHeatConductive_DefaultCoefficient = 1
 }
 
 local stdRangedGravityInteraction = {
@@ -56,7 +58,7 @@ local stdRangedConnectiveInteraction = {
 }
 local stdRangedLineConnectiveInteraction = {
     interaction = PtlInteractions.connect:new(
-        0, 0, 3
+        0, 0, 2
     ),
     range = sysparams.PtlConnect_Range
 }
@@ -109,16 +111,12 @@ local Environment = class("Environment", PhyWorld)
 
 Environment._createEntity = PhyWorld.createEntity
 Environment._addEntity = PhyWorld.addEntity
-Environment.foreachParticle = PhyWorld.foreachEntity
 Environment.getParticleCount = PhyWorld.getEntityCount
 
 function Environment:createEntity(...)
     assert(false, "unimplemented")
 end
 function Environment:addEntity(...)
-    assert(false, "unimplemented")
-end
-function Environment:foreachEntity(...)
     assert(false, "unimplemented")
 end
 function Environment:getEntityCount(...)

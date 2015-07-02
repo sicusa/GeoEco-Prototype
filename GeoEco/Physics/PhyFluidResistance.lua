@@ -1,12 +1,11 @@
 local class = require "lib.middleclass"
-local setSelector = require "GeoEco.EntitySelectorSetter"
 
 local PhyFluidResistance = class("PhyFluidResistance")
 
 function PhyFluidResistance:initialize(coefficient, density_getter, selector)
     self.coefficient = coefficient
     self:setDensityGetter(density_getter)
-    setSelector(self, "selector", selector)
+    self:setSelector(selector)
 end
 
 function PhyFluidResistance:getDensityGetter()
@@ -48,11 +47,11 @@ function PhyFluidResistance:setSelector(selector)
 end
 
 function PhyFluidResistance:onUpdate(world)
-    self.selector(function(entity)
+    for _, entity in pairs(self.selector(world)) do
         local density = self.density_getter(world, entity)
         local speed = entity.velocity:len()
         entity:applyResistance(self.coefficient * speed * speed * density)
-    end)
+    end
 end
 
 return PhyFluidResistance
