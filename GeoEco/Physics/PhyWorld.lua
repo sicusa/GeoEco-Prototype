@@ -79,6 +79,12 @@ function PhyWorld:removeConnection(con)
     self.removed_cons[con] = true
 end
 
+function PhyWorld:clearEntityConnections(entity)
+    for con, _ in pairs(entity.connections) do
+        self:removeConnection(con)
+    end
+end
+
 function PhyWorld:getConnections()
     return self.connections
 end
@@ -169,8 +175,9 @@ function PhyWorld:update()
     tree:foreach(function(obj)
         local entity = obj.data
 
-        if entity.selfRemoved == true then
+        if entity.self_removed == true then
             findAndRemove(self.entities, entity)
+            self:clearEntityConnections(entity)
             return true
         end
 

@@ -15,11 +15,11 @@ end
 local PhySpringInteraction = class("PhySpringInteraction")
 PhySpringInteraction:include(PhyInteraction)
 
-function PhySpringInteraction:initialize(info)
-    self.elastic = info.elastic
-    self.rest_len = info.rest_len
-    self.min_len  = info.min_len or 0
-    self.max_len  = info.max_len or 100000000
+function PhySpringInteraction:initialize(elastic, rest_len, min_len, max_len)
+    self.elastic = elastic
+    self.rest_len = rest_len
+    self.min_len  = min_len or 0
+    self.max_len  = max_len or 100000000
 end
 
 function PhySpringInteraction:applyImpl(e1, e2, dir, len)
@@ -32,9 +32,9 @@ function PhySpringInteraction:applyImpl(e1, e2, dir, len)
         local tm = e1m + e2m
         local exten = dir * (min_len - len)
 
-        e1.position:add(exten * (e1m / tm))
+        e1:applyForce(exten * (e1m / tm))
         exten:mul(-1)
-        e2.position:add(exten * (e2m / tm))
+        e2:applyForce(exten * (e2m / tm))
 
         e1:setVelocity(0, 0)
         e2:setVelocity(0, 0)
@@ -43,9 +43,9 @@ function PhySpringInteraction:applyImpl(e1, e2, dir, len)
         local tm = e1m + e2m
         local exten = dir * (len - max_len)
 
-        e1.position:sub(exten * (e1m / tm))
+        e1:applyForce(exten * (e1m / tm))
         exten:mul(-1)
-        e2.position:sub(exten * (e2m / tm))
+        e2:applyForce(exten * (e2m / tm))
 
         e1:setVelocity(0, 0)
         e2:setVelocity(0, 0)
@@ -135,7 +135,7 @@ return {
     base    = PhyInteraction,
     spring  = PhySpringInteraction,
     gravity = PhyGravityInteraction,
-    fixedDistance = PhyFixedDistanceInteraction,
+    fixed = PhyFixedDistanceInteraction,
     callback = CallbackInteraction,
     multi = MultiInteraction
 }

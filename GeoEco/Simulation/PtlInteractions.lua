@@ -64,17 +64,17 @@ function PtlConnectiveInteraction:applyImpl(e1, e2, dir, len)
     if Env == nil then
         Env = require "GeoEco.Environment"
     end
-    Env:createConnection(e1, e2, PhyInteractions.fixedDistance:new(dist))
+    Env:createConnection(e1, e2, PhyInteractions.fixed:new(dist))
 end
 
-local PtlHeatConductiveBehaviour = class("PtlHeatConductiveBehaviour")
-PtlHeatConductiveBehaviour:include(PhyInteractions.base)
+local PtlHeatConductiveInteraction = class("PtlHeatConductiveInteraction")
+PtlHeatConductiveInteraction:include(PhyInteractions.base)
 
-function PtlHeatConductiveBehaviour:initialize(default_coefficient)
+function PtlHeatConductiveInteraction:initialize(default_coefficient)
     self.default_coefficient = default_coefficient
 end
 
-function PtlHeatConductiveBehaviour:applyImpl(e1, e2, dir, len)
+function PtlHeatConductiveInteraction:applyImpl(e1, e2, dir, len)
     local t1, t2 = e1:getHeat(), e2:getHeat()
     local diff = t1 - t2
 
@@ -110,5 +110,5 @@ end
 return {
     combine = PtlCombinativeInteraction,
     connect = PtlConnectiveInteraction,
-    heat_conductive = PtlHeatConductiveBehaviour
+    heat_conductive = PtlHeatConductiveInteraction
 }

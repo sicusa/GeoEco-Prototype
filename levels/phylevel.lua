@@ -34,6 +34,7 @@ local PhyRandomForceField = require "GeoEco.Physics.PhyRandomForceField"
 
 local Env = require "GeoEco.Environment"
 local Particle = require "GeoEco.Simulation.Particle"
+local LifeCode = require "GeoEco.Simulation.LifeCode"
 local PtlBehaviours = require "GeoEco.Simulation.PtlBehaviours"
 local PtlInteractions = require "GeoEco.Simulation.PtlInteractions"
 
@@ -153,17 +154,47 @@ function PhyLevel:enter()
 
     self.attracted = {}
 
-    for i = 1, 500 do
+    local log_listener = {
+        log = function(self, code, head, msg)
+            print(head, msg)
+        end
+    }
+
+    for i = 1, 1 do
         local x = lmath.random(0, w)
         local y = lmath.random(0, h)
-        local mass = lmath.random(10, 10)
+        local mass = lmath.random(1000, 1000)
 
-        local entity = Env:createParticle(
+        local particle = Env:createParticle(
             Vector:new(x, y), mass, "GEPT-ELEM-0000"
         )
         -- entity.ghost = true
-        entity:setHeat(10)
-        table.insert(self.attracted, entityB)
+        particle:setHeat(1000)
+
+        local code = LifeCode:new()
+        code:setLogListener(log_listener)
+        code:loadString([[
+            [CONTROL]
+            THREAD REGIN_2
+            CALL REGIN_0
+
+            [REGIN_0]
+            SLEEP 60
+            PRODUCE GEPT-ELEM-0000 REGIN_1 10
+            CONNECT SPRING 0.1 10 5
+            CALL REGIN_0
+
+            [REGIN_1]
+            UNTIL_SINGLE
+            CALL CONTROL
+
+            [REGIN_2]
+            SLEEP 600
+            CLEAR_CONNECTIONS
+            EXIT
+        ]])
+        code:createThread("CONTROL")
+        particle:setCode(code)
     end
 
     for i = 1, 00 do
@@ -244,7 +275,7 @@ function PhyLevel:mousepressed(x, y, button)
     mpos:mul(-500)
 
     local entity = Env:createParticle(
-        Vector:new(w/2, h/2), 10, "GEPT-ELEM-0000"
+        Vector:new(w/2, h/2), 10, "GEPT-ELEM-0003"
     )
     entity:applyForce(mpos)
     entity:setHeat(10000)
@@ -276,11 +307,11 @@ function PhyLevel:draw()
     lgraph.setColor(0, 255, 0, 10)
     drawNode(Env.quadtree.root)
 
-    -- display ghost canvas
+    -- -- display ghost canvas
     -- lgraph.setColor(255, 255, 255, 255)
     -- lgraph.draw(self.canvas)
-
-    -- render ghosts
+    --
+    -- -- render ghosts
     -- lgraph.setBlendMode("alpha")
     -- lgraph.setCanvas(self.canvas)
     -- lgraph.setColor(255, 255, 255, 255)
@@ -318,7 +349,7 @@ function PhyLevel:draw()
     -- render entities
     for _, entity in pairs(Env:getEntities()) do
         local pos = entity.position
-        lgraph.setColor(255, 255, 255, math.min(255, entity:getHeat()))
+        --lgraph.setColor(255, 255, 255, math.min(255, entity:getHeat()))
         lgraph.point(pos.x, pos.y)
     end
 

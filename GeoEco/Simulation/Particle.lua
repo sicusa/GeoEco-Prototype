@@ -33,6 +33,14 @@ function Particle:initialize(pos, mass, category)
     self:updateInteractionRect()
 end
 
+function Particle:getCode()
+    return self.code
+end
+
+function Particle:setCode(code)
+    self.code = code
+end
+
 function Particle:updateInteractionRect()
     local pos = self:getPosition()
     local x, y = pos.x, pos.y
@@ -95,6 +103,10 @@ function Particle:update()
 
     self.life_count = self.life_count + 1
 
+    if self.code then
+        self.code:update(self)
+    end
+
     if self.behaviours then
         for _, behaviour in pairs(self.behaviours) do
             behaviour:update(self)
@@ -126,8 +138,6 @@ function Particle:update()
             end
         end
     end)
-
-    self.pulse = 0
 end
 
 return Particle
