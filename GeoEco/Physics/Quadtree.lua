@@ -54,7 +54,7 @@ local function searchRectInNode(node, rect, func)
         end
     end
 
-    if #node.children == 0 or node.subnodesObjectCount == 0 then
+    if #node.children == 0 then
         return
     end
 

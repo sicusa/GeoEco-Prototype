@@ -31,6 +31,16 @@ function PtlCombinativeInteraction:applyImpl(e1, e2, dir, len)
     e1:setLifeCount(0)
     e1:setMass(final_mass)
     e1:setTemperature(final_heat)
+
+    for con, _ in pairs(e2:getConnections()) do
+        if con:getEntityA() == e2 then
+            con:setEntityA(e1)
+        else
+            con:setEntityB(e1)
+        end
+        e1:addConnection(con)
+    end
+
     e2:removeSelf()
 end
 

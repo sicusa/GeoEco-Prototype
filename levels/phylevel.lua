@@ -176,22 +176,23 @@ function PhyLevel:enter()
         code:loadString([[
             [CONTROL]
             THREAD REGIN_2
+            MAX_GENERATION 3
             CALL REGIN_0
 
             [REGIN_0]
             SLEEP 60
-            PRODUCE GEPT-ELEM-0000 REGIN_1 10
-            CONNECT SPRING 0.1 10 5
+            __PRODUCE GEPT-ELEM-0002 REGIN_1 10
+            CONNECT SPRING 0.3 10 5
             CALL REGIN_0
 
             [REGIN_1]
-            UNTIL_SINGLE
+            SLEEP 120
             CALL CONTROL
 
             [REGIN_2]
             SLEEP 600
             CLEAR_CONNECTIONS
-            EXIT
+            REMOVE_SELF
         ]])
         code:createThread("CONTROL")
         particle:setCode(code)
@@ -231,11 +232,11 @@ function PhyLevel:enter()
     --         self.attractors
     --     )
     -- )
-    Env:addComponent(
-        PhyInteractionAppliers.global:new(
-            PtlInteractions.heat_conductive:new(1)
-        )
-    )
+    -- Env:addComponent(
+    --     PhyInteractionAppliers.global:new(
+    --         PtlInteractions.heat_conductive:new(1)
+    --     )
+    -- )
     Env:addComponent(PhyRandomForceField:new(0.1, 1))
     Env:addComponent(PhyFluidResistance:new(1, 0.01))
 

@@ -25,6 +25,14 @@ function PhyConnection:getEntityB()
     return self.entityB
 end
 
+function PhyConnection:setEntityA(entity)
+    self.entityA = entity
+end
+
+function PhyConnection:setEntityB(entity)
+    self.entityB = entity
+end
+
 function PhyConnection:getInteraction()
     return self.interaction
 end

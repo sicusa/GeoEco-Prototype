@@ -16,7 +16,7 @@ local function compile(code)
         local matcher = line:gmatch("%g+")
         local head = matcher()
 
-        if head == nil then
+        if head == nil or head:byte(1) == 59 then -- ';'
             -- next line
         elseif head:byte(1) == 91 then -- '['
             -- regin indicator
@@ -75,7 +75,7 @@ local commands = {
         end
     },
 
-    GENERATION = {
+    MAX_GENERATION = {
         args = { "number" },
         handler = function(life_code, particle, args)
             local max_gen = args[1]
@@ -89,9 +89,32 @@ local commands = {
     UNTIL_SINGLE = {
         args = {},
         handler = function(life_code, particle, args)
-            if particle:getConnectionCount() ~= 0 then
-                return false
+            return particle:getConnectionCount() == 0
+        end
+    },
+
+    __PRODUCE = {
+        args = { "string", "string", "number" }, -- category, regin, mass
+        handler = function(life_code, particle, args)
+            local child = nil
+            local child_mass = args[3]
+            local ptl_mass = particle:getMass()
+            local ptl_heat = particle:getHeat()
+            local new_pos = particle:getPosition():clone()
+
+            child = Env:createParticle(new_pos, child_mass, args[1])
+            child:setHeat(child_mass / ptl_mass * ptl_heat)
+
+            if args[2] ~= "[]" then
+                local newCode = LifeCode:new()
+                newCode:loadCompiledCode(life_code:getCompiledCode())
+                newCode:setLogListener(life_code:getLogListener())
+                local thread = newCode:createThread(args[2])
+                thread.linked_particle = particle
+                child:setCode(newCode)
             end
+            child:setGeneration(particle:getGeneration() + 1)
+            life_code:setLinkedParticle(child)
             return true
         end
     },
@@ -180,6 +203,15 @@ local commands = {
         args = { "string" },
         handler = function(life_code, particle, args)
             life_code:createThread(args[1])
+            return true
+        end
+    },
+
+    REMOVE_SELF = {
+        args = {},
+        handler = function(life_code, particle, args)
+            life_code:terminateAllThreads()
+            particle:removeSelf()
             return true
         end
     },
@@ -435,18 +467,15 @@ function LifeCode:update(ptl)
         --         thread.index
         --     )
         -- )
-        while thread.command_handler(self, ptl, thread.command_oprands) do
-            if self.current_thread == nil then
-                return
-            end
-            if self:switchCommand(thread.index + 1) == false then
+        if thread.command_handler(self, ptl, thread.command_oprands) then
+            if self.current_thread ~= nil and
+               self:switchCommand(thread.index + 1) == false then
                 self:returnFromCurrentRegin()
                 if self.current_thread == nil then
-                    break
+                    return
                 end
             end
-        end
-        if thread.regin == current_regin then
+        elseif thread.regin == current_regin then
             thread.command_timer = thread.command_timer + 1
         end
     end
