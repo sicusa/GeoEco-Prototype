@@ -15,6 +15,7 @@ function Particle:initialize(pos, mass, category)
     self.life_count = 0
     self.generation = 1
     self.pulse = 0
+    self.pulse_resistance = 0.01
 
     self.ranged_interactions = category.ranged_interactions
     self.behaviours = category.behaviours
@@ -85,15 +86,20 @@ function Particle:getPulse()
 end
 
 function Particle:setPulse(pulse)
-    self.pulse = pulse
+    self.pulse = math.min(pulse, 1)
+end
+
+function Particle:applyPulse(pulse)
+    self.pulse = math.min(self.pulse + pulse, 1)
 end
 
 function Particle:clone()
     local new_particle = Particle:new(
         self:getPosition():clone(), self:getMass(), self.category)
-    new_particle.temperature = self.temperature
-    new_article.life_count = self.life_count
-    new_article.generation = self.generation
+    new_particle.heat = self.heat
+    new_particle.life_count = self.life_count
+    new_particle.generation = self.generation
+    new_particle.pulse = self.pulse
     return newParticle
 end
 
@@ -120,6 +126,7 @@ function Particle:update()
     end
 
     local pos = self:getPosition()
+    local pulse = self.pulse
     self:updateInteractionRect()
 
     Env:findAll(self.rect, function(obj, dis)
@@ -134,10 +141,18 @@ function Particle:update()
 
         for _, rb in pairs(rbs) do
             if len < rb.range then
-                rb.interaction:applyImpl(self, entity, dir, len)
+                rb.interaction:applyImpl(self, entity, dir, len, 0)
             end
         end
     end)
+
+    for con, _ in pairs(self.connections) do
+        con:applyReinforce(self.pulse)
+    end
+
+    if pulse > 0 then
+        self.pulse = pulse - self.pulse_resistance
+    end
 end
 
 return Particle

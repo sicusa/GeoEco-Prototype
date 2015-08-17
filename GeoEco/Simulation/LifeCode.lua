@@ -222,6 +222,32 @@ local commands = {
             life_code:terminateAllThreads()
             return true
         end
+    },
+
+    SET_PULSE = {
+        args = { "number" },
+        handler = function(life_code, particle, args)
+            particle:setPulse(args[1])
+            return true
+        end
+    },
+
+    APPLY_PULSE = {
+        args = { "number" },
+        handler = function(life_code, particle, args)
+            particle:applyPulse(args[1])
+            return true
+        end
+    },
+
+    WAIT_ZERO_PULSE = {
+        args = {},
+        handler = function(life_code, particle, args)
+            if particle:getPulse() > 0 then
+                return false
+            end
+            return true
+        end
     }
 }
 

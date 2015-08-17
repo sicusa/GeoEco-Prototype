@@ -49,13 +49,6 @@ end
 function PhyLevel:createStructure(num)
     local group = {}
 
-    local springInfo = {
-        elastic = 0.01,
-        restLen = 10 * num,
-        minLen = 0,
-        maxLen = 10000
-    }
-
     local v = math.pi * 2 / num
     local curr = 0
     -- local x = w / 2
@@ -64,8 +57,9 @@ function PhyLevel:createStructure(num)
     local y = lmath.random(0, h)
 
     for i = 1, num do
-        local entity = self:createParticle(
-            x + math.cos(curr) * 10, y + math.sin(curr) * 10, 1
+        local entity = Env:createParticle(
+            Vector:new(x + math.cos(curr) * 10, y + math.sin(curr) * 10), 5 * num,
+            "GEPT-ELEM-0002"
         )
         curr = curr + v
         table.insert(group, entity)
@@ -76,17 +70,11 @@ function PhyLevel:createStructure(num)
             if i ~= j then
                 Env:createConnection(
                     group[i], group[j],
-                    PhyInteractions.spring(springInfo)
+                    PhyInteractions.spring:new(0.01, 10, 40)
                 )
             end
         end
     end
-    Env:addComponent(
-        PhyInteractionApplier:new(
-            PhyInteractions.gravity:new(-600.6),
-            group, group
-        )
-    )
     return group
 end
 
@@ -99,35 +87,23 @@ function PhyLevel:createMembrane(num)
     local group = {}
 
     for i = 1, num do
-        local entity = self:createParticle(
-            x + math.cos(curr) * 10, y + math.sin(curr) * 10, 1
+        local entity = Env:createParticle(
+            Vector:new(x + math.cos(curr) * 10, y + math.sin(curr) * 10), 1,
+            "GEPT-ELEM-0002"
         )
         curr = curr + v
         table.insert(group, entity)
     end
 
-    local springInfo = {
-        elastic = 0.1,
-        restLen = 50 / num,
-        minLen = 0,
-        maxLen = 1000
-    }
-
     for i = 1, num - 1 do
         Env:createConnection(
             group[i], group[i+1],
-            PhyInteractions.spring(springInfo)
+            PhyInteractions.spring(0.01, 5, 20)
         )
     end
     Env:createConnection(
         group[#group], group[1],
-        PhyInteractions.spring(springInfo)
-    )
-    Env:addComponent(
-        PhyInteractionApplier:new(
-            PhyInteractions.gravity:new(-60.6),
-            group, group
-        )
+        PhyInteractions.spring(0.01, 5, 20)
     )
     return group
 end
@@ -160,43 +136,43 @@ function PhyLevel:enter()
         end
     }
 
-    for i = 1, 1 do
-        local x = lmath.random(0, w)
-        local y = lmath.random(0, h)
-        local mass = lmath.random(1000, 1000)
-
-        local particle = Env:createParticle(
-            Vector:new(x, y), mass, "GEPT-ELEM-0000"
-        )
-        -- entity.ghost = true
-        particle:setHeat(1000)
-
-        local code = LifeCode:new()
-        code:setLogListener(log_listener)
-        code:loadString([[
-            [CONTROL]
-            THREAD REGIN_2
-            MAX_GENERATION 3
-            CALL REGIN_0
-
-            [REGIN_0]
-            SLEEP 60
-            __PRODUCE GEPT-ELEM-0002 REGIN_1 10
-            CONNECT SPRING 0.3 10 5
-            CALL REGIN_0
-
-            [REGIN_1]
-            SLEEP 120
-            CALL CONTROL
-
-            [REGIN_2]
-            SLEEP 600
-            CLEAR_CONNECTIONS
-            REMOVE_SELF
-        ]])
-        code:createThread("CONTROL")
-        particle:setCode(code)
-    end
+    -- for i = 1, 1 do
+    --     local x = lmath.random(0, w)
+    --     local y = lmath.random(0, h)
+    --     local mass = lmath.random(1000, 1000)
+    --
+    --     local particle = Env:createParticle(
+    --         Vector:new(x, y), mass, "GEPT-ELEM-0000"
+    --     )
+    --     -- entity.ghost = true
+    --     particle:setHeat(1000)
+    --
+    --     local code = LifeCode:new()
+    --     code:setLogListener(log_listener)
+    --     code:loadString([[
+    --         [CONTROL]
+    --         THREAD REGIN_2
+    --         MAX_GENERATION 3
+    --         CALL REGIN_0
+    --
+    --         [REGIN_0]
+    --         SLEEP 60
+    --         __PRODUCE GEPT-ELEM-0002 REGIN_1 10
+    --         CONNECT SPRING 0.1 10 5
+    --         CALL REGIN_0
+    --
+    --         [REGIN_1]
+    --         SLEEP 120
+    --         CALL CONTROL
+    --
+    --         [REGIN_2]
+    --         SLEEP 600
+    --         CLEAR_CONNECTIONS
+    --         REMOVE_SELF
+    --     ]])
+    --     code:createThread("CONTROL")
+    --     particle:setCode(code)
+    -- end
 
     for i = 1, 00 do
         local x = lmath.random(0, w)
@@ -210,8 +186,19 @@ function PhyLevel:enter()
         table.insert(self.attracted, entityB)
     end
 
-    for i = 1, 0 do
-        self:createStructure(math.random(3, 10))
+    for i = 1, 1 do
+        local group = self:createStructure(10)
+        for _, ptl in ipairs(group) do
+            local code = LifeCode:new()
+            code:loadString([[
+                [CONTROL]
+                SET_PULSE 1
+                WAIT_ZERO_PULSE
+                CALL CONTROL
+            ]])
+            code:createThread("CONTROL")
+            ptl:setCode(code)
+        end
         -- self:createStructure(4)
     end
     for i = 1, 0 do
@@ -237,8 +224,8 @@ function PhyLevel:enter()
     --         PtlInteractions.heat_conductive:new(1)
     --     )
     -- )
-    Env:addComponent(PhyRandomForceField:new(0.1, 1))
-    Env:addComponent(PhyFluidResistance:new(1, 0.01))
+    -- Env:addComponent(PhyRandomForceField:new(0.1, 1))
+    Env:addComponent(PhyFluidResistance:new(1, 0.1))
 
     -- initialize shaders
     self.shader = lgraph.newShader [[

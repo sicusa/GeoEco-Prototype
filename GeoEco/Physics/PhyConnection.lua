@@ -9,6 +9,7 @@ function PhyConnection:initialize(entityA, entityB, interaction)
     self.entityA = entityA
     self.entityB = entityB
     self.interaction = interaction
+    self.reinforce = 0
 
     self.bounded_rect_dirty = true
     self.line_info_dirty = false
@@ -41,11 +42,24 @@ function PhyConnection:setInteraction(i)
     self.interaction = i
 end
 
+function PhyConnection:getReinforce()
+    return self.reinforce
+end
+
+function PhyConnection:setReinforce(reinforce)
+    self.reinforce = reinforce
+end
+
+function PhyConnection:applyReinforce(reinforce)
+    self.reinforce = reinforce + self.reinforce
+end
+
 function PhyConnection:update()
-    local eA, eB = self.entityA, self.entityB
-    self.interaction:apply(eA, eB)
+    self.interaction:apply(self.entityA, self.entityB, self.reinforce)
+
     self.bounded_rect_dirty = true
     self.line_info_dirty = true
+    self.reinforce = 0
 end
 
 function PhyConnection:getBoundedRect()

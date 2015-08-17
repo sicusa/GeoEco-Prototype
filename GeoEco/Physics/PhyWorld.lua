@@ -48,8 +48,8 @@ function PhyWorld:createEntity(pos, mass)
     return self:addEntity(entity)
 end
 
-function PhyWorld:createConnection(e1, e2, behaviour)
-    local con = PhyConnection:new(e1, e2, behaviour)
+function PhyWorld:createConnection(e1, e2, interaction)
+    local con = PhyConnection:new(e1, e2, interaction)
     return self:addConnection(con)
 end
 
