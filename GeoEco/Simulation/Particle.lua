@@ -118,6 +118,15 @@ function Particle:update()
             behaviour:update(self)
         end
     end
+    
+    local pulse = self.pulse
+    for con, _ in pairs(self.connections) do
+        con:applyReinforce(self.pulse)
+    end
+
+    if pulse > 0 then
+        self.pulse = pulse - self.pulse_resistance
+    end
 
     -- apply Interactions
     local rbs = self.ranged_interactions
@@ -126,7 +135,6 @@ function Particle:update()
     end
 
     local pos = self:getPosition()
-    local pulse = self.pulse
     self:updateInteractionRect()
 
     Env:findAll(self.rect, function(obj, dis)
@@ -145,14 +153,6 @@ function Particle:update()
             end
         end
     end)
-
-    for con, _ in pairs(self.connections) do
-        con:applyReinforce(self.pulse)
-    end
-
-    if pulse > 0 then
-        self.pulse = pulse - self.pulse_resistance
-    end
 end
 
 return Particle

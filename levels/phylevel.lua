@@ -42,11 +42,12 @@ local PhyLevel = {}
 
 local w, h = 0, 0
 local center = Vector:new()
+local ghosts = {}
 
 function PhyLevel:init()
 end
 
-function PhyLevel:createStructure(num)
+function PhyLevel:createStructure(num, elastic, rest_len, add_len)
     local group = {}
 
     local v = math.pi * 2 / num
@@ -58,8 +59,8 @@ function PhyLevel:createStructure(num)
 
     for i = 1, num do
         local entity = Env:createParticle(
-            Vector:new(x + math.cos(curr) * 10, y + math.sin(curr) * 10), 5 * num,
-            "GEPT-ELEM-0002"
+            Vector:new(x + math.cos(curr) * 10, y + math.sin(curr) * 10), 3,
+            "GEPT-ELEM-0001"
         )
         curr = curr + v
         table.insert(group, entity)
@@ -70,7 +71,7 @@ function PhyLevel:createStructure(num)
             if i ~= j then
                 Env:createConnection(
                     group[i], group[j],
-                    PhyInteractions.spring:new(0.01, 10, 40)
+                    PhyInteractions.spring:new(elastic, rest_len, add_len)
                 )
             end
         end
@@ -89,7 +90,7 @@ function PhyLevel:createMembrane(num)
     for i = 1, num do
         local entity = Env:createParticle(
             Vector:new(x + math.cos(curr) * 10, y + math.sin(curr) * 10), 1,
-            "GEPT-ELEM-0002"
+            "GEPT-ELEM-0001"
         )
         curr = curr + v
         table.insert(group, entity)
@@ -186,15 +187,25 @@ function PhyLevel:enter()
         table.insert(self.attracted, entityB)
     end
 
-    for i = 1, 1 do
-        local group = self:createStructure(10)
+    for i = 1, 10 do
+        local elastic = 0.01
+        local rest_len = lmath.random(50, 50)
+        local add_len = lmath.random(rest_len / 2, rest_len)
+        local group = self:createStructure(10, elastic, rest_len, add_len)
+        local wait = math.random(0, 60)
         for _, ptl in ipairs(group) do
             local code = LifeCode:new()
             code:loadString([[
                 [CONTROL]
+                SLEEP ]]..wait.."\n"..[[
+                CALL LOOP
+
+                [LOOP]
                 SET_PULSE 1
-                WAIT_ZERO_PULSE
-                CALL CONTROL
+                SLEEP 10
+                SET_PULSE 0
+                SLEEP 50
+                CALL LOOP
             ]])
             code:createThread("CONTROL")
             ptl:setCode(code)
@@ -224,7 +235,7 @@ function PhyLevel:enter()
     --         PtlInteractions.heat_conductive:new(1)
     --     )
     -- )
-    -- Env:addComponent(PhyRandomForceField:new(0.1, 1))
+    Env:addComponent(PhyRandomForceField:new(1, 1))
     Env:addComponent(PhyFluidResistance:new(1, 0.1))
 
     -- initialize shaders
@@ -266,8 +277,8 @@ function PhyLevel:mousepressed(x, y, button)
         Vector:new(w/2, h/2), 10, "GEPT-ELEM-0003"
     )
     entity:applyForce(mpos)
-    entity:setHeat(10000)
-    entity.ghost = true
+    entity:setHeat(1000)
+    table.insert(ghosts, entity)
 end
 
 function drawRect(rect)
@@ -300,26 +311,22 @@ function PhyLevel:draw()
     -- lgraph.draw(self.canvas)
     --
     -- -- render ghosts
-    -- lgraph.setBlendMode("alpha")
     -- lgraph.setCanvas(self.canvas)
+    -- lgraph.setBlendMode("alpha")
     -- lgraph.setColor(255, 255, 255, 255)
-    -- lgraph.setShader(self.shader)
     --
-    -- for _, entity in pairs(Env:getEntities()) do
-    --     if entity.ghost then
-    --         local pos = entity.position
-    --         local lastpos = entity.lastpos
-    --         lgraph.line(lastpos.x, lastpos.y, pos.x, pos.y)
-    --     end
+    -- for _, entity in pairs(ghosts) do
+    --     local pos = entity.position
+    --     local lastpos = entity.lastpos
+    --     lgraph.line(lastpos.x, lastpos.y, pos.x, pos.y)
     -- end
     --
     -- lgraph.setBlendMode("subtractive")
     -- lgraph.setColor(0, 0, 0, 50)
     -- lgraph.rectangle("fill", 0, 0, w, h)
-
-    -- reset
-    lgraph.setShader()
-    lgraph.setCanvas()
+    --
+    -- -- reset
+    -- lgraph.setCanvas()
 
     -- render connections
     lgraph.setBlendMode("additive")
@@ -328,6 +335,7 @@ function PhyLevel:draw()
     for bie, _ in pairs(Env:getConnections()) do
         local eA, eB = bie:getEntityA(), bie:getEntityB()
         local posA, posB = eA.position, eB.position
+        -- lgraph.setColor(255, 255, 255, math.min(255, eA:getHeat()))
         lgraph.line(posA.x, posA.y, posB.x, posB.y)
     end
 
@@ -337,7 +345,7 @@ function PhyLevel:draw()
     -- render entities
     for _, entity in pairs(Env:getEntities()) do
         local pos = entity.position
-        --lgraph.setColor(255, 255, 255, math.min(255, entity:getHeat()))
+        -- lgraph.setColor(255, 255, 255, math.min(255, entity:getHeat()))
         lgraph.point(pos.x, pos.y)
     end
 
